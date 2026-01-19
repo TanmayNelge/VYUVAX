@@ -9,25 +9,35 @@ def printb(board):
 
 
 history=[]
-def movepl(board, position, player):
+def movepl(board, history, position, player):
     if board[position] != " ":
-        raise ValueError("Position already occupied")
+        return False
+    
     board[position] = player
     history.append((position, player))
 
-    return board
+    return True
 
 def vanishpl(board, history, player):
-    player_move=[]
-    for m in history:
-        if m[1] == player:
-            player_move.append(m)
-    
-    if len(player_move)>3:
-        oldpos, _ = player_move[0]
-        board[oldpos] = " "
-        history.remove(player_move[0])
-    return board, history
+    player_moves = [m for m in history if m[1] == player]
+
+    removed = None
+    if len(player_moves) > 3:
+        removed = player_moves[0]
+        board[removed[0]] = " "
+        history.remove(removed)
+
+    return removed
+
+def undo_move(board, history, position, removed):
+    board[position] = " "
+    history.pop()
+
+    if removed:
+        pos, player = removed
+        board[pos] = player
+        history.insert(0, removed)
+
 
 winning_positions =[(0,1,2),(3,4,5),(6,7,8),(0,3,6),(1,4,7),(2,5,8),(0,4,8),(2,4,6)]
 
@@ -37,24 +47,24 @@ def winnercheck(board):
             return board[a]
     return None
 
-current_player = "X"
+# current_player = "X"
 
-while True:
-    print(f"{current_player}'s turn")
-    pos = int(input("Enter position (0-8): "))
-    movepl(board, pos, current_player)
-    board, history = vanishpl(board, history, current_player)
+# while True:
+#     print(f"{current_player}'s turn")
+#     pos = int(input("Enter position (0-8): "))
+#     movepl(board, pos, current_player)
+#     board, history = vanishpl(board, history, current_player)
 
-    print("\n")
-    printb(board)
-    print("\n")
+#     print("\n")
+#     printb(board)
+#     print("\n")
 
-    winner = winnercheck(board)
-    if winner:
-        print(winner, "wins!")
-        break
+#     winner = winnercheck(board)
+#     if winner:
+#         print(winner, "wins!")
+#         break
 
-    current_player = "O" if current_player == "X" else "X"
+#     current_player = "O" if current_player == "X" else "X"
 
 # adding heuristic logic
 
@@ -75,30 +85,32 @@ def evaluate_line(line,player):
     
     return 0
 
-def heuristic(player):
+def heuristic(board):
     score = 0
 
     # considering positive scores for "X" and negative for "O"
-    for i in range(3):
-        # row
-        score += evaluate_line(board[i],"X")
-        score -= evaluate_line(board[i],"O")
+    rows = [board[0:3], board[3:6], board[6:9]]
+    cols = [
+        [board[0], board[3], board[6]],
+        [board[1], board[4], board[7]],
+        [board[2], board[5], board[8]]
+    ]
+    diags = [
+        [board[0], board[4], board[8]],
+        [board[2], board[4], board[6]]
+    ]
 
-        # col
-        col = [board[j][i] for j in range(3)]
-        score += evaluate_line(col,"X")
-        score -= evaluate_line(col,"O")
-
-    # diagnol
-    diag1 = [board[i][i] for i in range(3)]
-    diag2 = [board[i][2-i] for i in range(3)]
-
-    score += evaluate_line(diag1,"X")
-    score += evaluate_line(diag2,"X")
-    score -= evaluate_line(diag1,"O")
-    score -= evaluate_line(diag2,"O")
+    for line in rows + cols + diags:
+        score += evaluate_line(line, "X")
+        score -= evaluate_line(line, "O")
 
     return score
 
 # heuristic logic added
+# Minimax algorithm with heuristic and alpha beta prunning
+
+
+
+    
+
 
