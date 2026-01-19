@@ -55,3 +55,50 @@ while True:
         break
 
     current_player = "O" if current_player == "X" else "X"
+
+# adding heuristic logic
+
+def evaluate_line(line,player):
+    opponent = "O" if player=="X" else "X"
+
+    if opponent in line:
+        return 0
+    
+    count = line.count(player)
+
+    if(count==3):
+        return 1000
+    if(count==2):
+        return 100
+    if(count==1):
+        return 1
+    
+    return 0
+
+def heuristic(player):
+    score = 0
+
+    # considering positive scores for "X" and negative for "O"
+    for i in range(3):
+        # row
+        score += evaluate_line(board[i],"X")
+        score -= evaluate_line(board[i],"O")
+
+        # col
+        col = [board[j][i] for j in range(3)]
+        score += evaluate_line(col,"X")
+        score -= evaluate_line(col,"O")
+
+    # diagnol
+    diag1 = [board[i][i] for i in range(3)]
+    diag2 = [board[i][2-i] for i in range(3)]
+
+    score += evaluate_line(diag1,"X")
+    score += evaluate_line(diag2,"X")
+    score -= evaluate_line(diag1,"O")
+    score -= evaluate_line(diag2,"O")
+
+    return score
+
+# heuristic logic added
+
