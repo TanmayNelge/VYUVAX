@@ -49,25 +49,6 @@ def winnercheck(board):
             return board[a]
     return None
 
-# current_player = "X"
-
-# while True:
-#     print(f"{current_player}'s turn")
-#     pos = int(input("Enter position (0-8): "))
-#     movepl(board, pos, current_player)
-#     board, history = vanishpl(board, history, current_player)
-
-#     print("\n")
-#     printb(board)
-#     print("\n")
-
-#     winner = winnercheck(board)
-#     if winner:
-#         print(winner, "wins!")
-#         break
-
-#     current_player = "O" if current_player == "X" else "X"
-
 # adding heuristic logic
 
 def evaluate_line(line,player):
@@ -175,5 +156,58 @@ def best_move(board,history,depth):
                 
     return move
 
+def play():
+
+    print("Choose mode to play:\n")
+    choice = int(input("1.AI\n2.Friend:\n " ))
+    depth = 10
+    current_player = "O"
+    print("Vanishing Tic-Tac-Toe")
+    print()
+    if(choice == 1):
+        print("You are O | AI is X")
+        print()
+
+        while True:
+            printb(board)
+            print()
+            winner = winnercheck(board)
+            if winner:
+                print(winner, "Wins!")
+                break
+
+            if current_player == "O":
+                pos = int(input("Enter position (0-8): "))
+                if not movepl(board, history, pos, "O"):
+                    print("Invalid move")
+                    continue
+                vanishpl(board, history, "O")
+                current_player = "X"
+            else:
+                pos = best_move(board, history, depth)
+                movepl(board, history, pos, "X")
+                vanishpl(board, history, "X")
+                current_player = "O"
+    
+    else:
+        while True:
+            print(f"{current_player}'s turn")
+            pos = int(input("Enter position (0-8): "))
+            movepl(board, history, pos, current_player)
+            removed = vanishpl(board, history, current_player)
+
+            print("\n")
+            printb(board)
+            print("\n")
+
+            winner = winnercheck(board)
+            if winner:
+                print(winner, "wins!")
+                break
+
+            current_player = "O" if current_player == "X" else "X"
+
+
+play()
 
 
