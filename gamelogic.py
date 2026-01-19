@@ -1,3 +1,5 @@
+import math
+
 board = [" "]*9
 
 def printb(board):
@@ -110,7 +112,68 @@ def heuristic(board):
 # Minimax algorithm with heuristic and alpha beta prunning
 
 
+def minimax(board,history,depth,alpha,beta,maximizing):
+    winner = winnercheck(board)
 
+    if winner == "X":
+        return 1000
+    if winner == "O":
+        return -1000
+    if depth == 0:
+        return heuristic(board)
     
+    if maximizing:
+        best = -math.inf
+        for i in range(9):
+            if board[i]==" ":
+                movepl(board,history,i,"X")
+                removed = vanishpl(board,history,"X")
+
+                value = minimax(board,history,depth-1,alpha,beta,False)
+
+                undo_move(board,history,i,removed)
+
+                best = max(best,value)
+                alpha = max(alpha,best)
+                if beta<=alpha:
+                    break
+        return best
+    else:
+        best = math.inf
+        for i in range(9):
+            if board[i]==" ":
+                movepl(board,history,i,"O")
+                removed = vanishpl(board,history,"O")
+
+                value = minimax(board,history,depth-1,alpha,beta,True)
+
+                undo_move(board,history,i,removed)
+
+                best = min(best,value)
+                beta = min(best,beta)
+                if beta<=alpha:
+                    break
+    return best
+    
+def best_move(board,history,depth):
+    # assuming ai is X 
+    best_score = -math.inf
+    move = None
+
+    for i in range(9):
+        if board[i] == " ":
+            movepl(board,history,i,"X")
+            removed = vanishpl(board,history,"X")
+
+            score = minimax(board,history,depth-1,-math.inf,math.inf,False)
+
+            undo_move(board,history,i,removed)
+
+            if score > best_score:
+                best_score = score
+                move = i
+                
+    return move
+
 
 
