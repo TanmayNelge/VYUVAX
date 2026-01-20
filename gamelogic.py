@@ -1,4 +1,5 @@
 import math
+# import random.py
 
 board = [" "]*9
 
@@ -159,7 +160,7 @@ def best_move(board,history,depth):
 def play():
 
     print("Choose mode to play:\n")
-    choice = int(input("1.AI\n2.Friend:\n " ))
+    choice = int(input("1.AI\n2.Friend:\n" ))
     depth = 10
     current_player = "O"
     print("Vanishing Tic-Tac-Toe")
@@ -191,23 +192,23 @@ def play():
     
     else:
         while True:
+            printb(board)
+            print()
             print(f"{current_player}'s turn")
             pos = int(input("Enter position (0-8): "))
-            movepl(board, history, pos, current_player)
-            removed = vanishpl(board, history, current_player)
-
-            print("\n")
-            printb(board)
-            print("\n")
+            if not movepl(board, history, pos, current_player):
+                    print("Invalid move")
+                    continue
+            vanishpl(board, history, current_player)
 
             winner = winnercheck(board)
             if winner:
+                printb(board)
                 print(winner, "wins!")
                 break
 
             current_player = "O" if current_player == "X" else "X"
 
-
-play()
+# play()
 
 
