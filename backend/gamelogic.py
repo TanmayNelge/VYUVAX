@@ -52,43 +52,100 @@ def winnercheck(board):
 
 # adding heuristic logic
 
-def evaluate_line(line,player):
-    opponent = "O" if player=="X" else "X"
+def mark_age(position, player, history):
+    player_moves = [m for m in history if m[1] == player]
+    for idx, (pos, _) in enumerate(player_moves):
+        if pos == position:
+            return len(player_moves) - idx - 1
+    return None
 
-    if opponent in line:
-        return 0
+def age_weight(age):
+    if age == 0:
+        return 1.0
+    elif age == 1:
+        return 0.7
+    else:
+        return 0.3
+
+
+# def evaluate_line(line,player):
+#     opponent = "O" if player=="X" else "X"
+
+#     if opponent in line:
+#         return 0
     
-    count = line.count(player)
+#     count = line.count(player)
 
-    if(count==3):
+#     if(count==3):
+#         return 1000
+#     if(count==2):
+#         return 100
+#     if(count==1):
+#         return 1
+    
+#     return 0
+
+def evaluate_line_with_age(line_positions, board, history, player):
+    opponent = "O" if player == "X" else "X"
+
+    # If opponent blocks the line, no value
+    for pos in line_positions:
+        if board[pos] == opponent:
+            return 0
+
+    score = 0
+    for pos in line_positions:
+        if board[pos] == player:
+            age = mark_age(pos, player, history)
+            score += age_weight(age)
+
+    # amplify strong lines
+    if score >= 2.5:
         return 1000
-    if(count==2):
+    if score >= 1.5:
         return 100
-    if(count==1):
-        return 1
-    
+    if score > 0:
+        return 10 * score
+
     return 0
 
-def heuristic(board):
+
+# def heuristic(board):
+#     score = 0
+
+#     # considering positive scores for "X" and negative for "O"
+#     rows = [board[0:3], board[3:6], board[6:9]]
+#     cols = [
+#         [board[0], board[3], board[6]],
+#         [board[1], board[4], board[7]],
+#         [board[2], board[5], board[8]]
+#     ]
+#     diags = [
+#         [board[0], board[4], board[8]],
+#         [board[2], board[4], board[6]]
+#     ]
+
+#     for line in rows + cols + diags:
+#         score += evaluate_line(line, "X")
+#         score -= evaluate_line(line, "O")
+
+#     return score
+
+def heuristic(board, history):
     score = 0
 
-    # considering positive scores for "X" and negative for "O"
-    rows = [board[0:3], board[3:6], board[6:9]]
-    cols = [
-        [board[0], board[3], board[6]],
-        [board[1], board[4], board[7]],
-        [board[2], board[5], board[8]]
-    ]
-    diags = [
-        [board[0], board[4], board[8]],
-        [board[2], board[4], board[6]]
+    lines = [
+        (0,1,2),(3,4,5),(6,7,8),
+        (0,3,6),(1,4,7),(2,5,8),
+        (0,4,8),(2,4,6)
     ]
 
-    for line in rows + cols + diags:
-        score += evaluate_line(line, "X")
-        score -= evaluate_line(line, "O")
+    for line in lines:
+        score += evaluate_line_with_age(line, board, history, "X")
+        score -= evaluate_line_with_age(line, board, history, "O")
 
     return score
+
 
 # heuristic logic added
 # Minimax algorithm with heuristic and alpha beta prunning
@@ -102,7 +159,7 @@ def minimax(board,history,depth,alpha,beta,maximizing):
     if winner == "O":
         return -1000
     if depth == 0:
-        return heuristic(board)
+        return heuristic(board,history)
     
     if maximizing:
         best = -math.inf
@@ -137,23 +194,41 @@ def minimax(board,history,depth,alpha,beta,maximizing):
                     break
     return best
     
-def best_move(board,history,depth):
-    # assuming ai is X 
-    best_score = -math.inf
-    move = None
+def best_move(board,history,depth,player):
+    # assuming ai is X
+    if player == "X": 
+        best_score = -math.inf
+        move = None
 
-    for i in range(9):
-        if board[i] == " ":
-            movepl(board,history,i,"X")
-            removed = vanishpl(board,history,"X")
+        for i in range(9):
+            if board[i] == " ":
+                movepl(board,history,i,"X")
+                removed = vanishpl(board,history,"X")
 
-            score = minimax(board,history,depth-1,-math.inf,math.inf,False)
+                score = minimax(board,history,depth-1,-math.inf,math.inf,False)
 
-            undo_move(board,history,i,removed)
+                undo_move(board,history,i,removed)
 
-            if score > best_score:
-                best_score = score
-                move = i
+                if score > best_score:
+                    best_score = score
+                    move = i
+
+    else: 
+        best_score = math.inf
+        move = None
+
+        for i in range(9):
+            if board[i] == " ":
+                movepl(board,history,i,"O")
+                removed = vanishpl(board,history,"O")
+
+                score = minimax(board,history,depth-1,-math.inf,math.inf,True)
+
+                undo_move(board,history,i,removed)
+
+                if score < best_score:
+                    best_score = score
+                    move = i
                 
     return move
 
@@ -185,7 +260,7 @@ def play():
                 vanishpl(board, history, "O")
                 current_player = "X"
             else:
-                pos = best_move(board, history, depth)
+                pos = best_move(board, history, depth,"X")
                 movepl(board, history, pos, "X")
                 vanishpl(board, history, "X")
                 current_player = "O"
@@ -209,6 +284,6 @@ def play():
 
             current_player = "O" if current_player == "X" else "X"
 
-play()
+# play()
 
 

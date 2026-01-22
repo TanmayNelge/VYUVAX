@@ -21,10 +21,11 @@ def play_tournament(games=10):
         for turn in range(50):
             if current_player == "X":
                 # AI's turn
-                move = best_move(current_board, current_history, depth=4)
+                move = best_move(current_board, current_history, depth=4,player="X")
             else:
                 # Random Agent's turn
-                move = random_agent(current_board)
+                #move = random_agent(current_board)
+                move = best_move(current_board,current_history,depth=6,player="O")
             
             if move is None: break
             
