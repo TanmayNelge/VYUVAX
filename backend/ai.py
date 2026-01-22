@@ -3,6 +3,7 @@ import math
 from board import movepl, vanishpl, undo_move
 from rules import winnercheck
 
+node_count=0
 
 def mark_age(position, player, history):
     player_moves = [m for m in history if m[1] == player]
@@ -59,6 +60,9 @@ def heuristic(board, history):
 
 
 def minimax(board, history, depth, alpha, beta, maximizing):
+    global node_count
+    node_count+=1
+    
     winner = winnercheck(board)
 
     if winner == "X":
@@ -101,6 +105,9 @@ def minimax(board, history, depth, alpha, beta, maximizing):
 
 
 def best_move(board, depth, player):
+    global node_count
+    node_count=0
+    
     best_score = -float("inf") if player == "X" else float("inf")
     move = None
 
