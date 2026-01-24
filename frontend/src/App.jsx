@@ -4,23 +4,75 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 export default function VanishingTicTacToe() {
-  const [mode, setMode] = useState(null); // null | 'single' | 'two'
-  const [difficulty, setDifficulty] = useState(null); // easy | medium | hard | extreme
+  const [mode, setMode] = useState(null);
+  const [difficulty, setDifficulty] = useState(null);
   const [board, setBoard] = useState(Array(9).fill(null));
   const [turn, setTurn] = useState("X");
 
-  const handleCellClick = (idx) => {
-    if (board[idx]) return;
-    const newBoard = [...board];
-    newBoard[idx] = turn;
-    setBoard(newBoard);
-    setTurn(turn === "X" ? "O" : "X");
-  };
+const handleCellClick = async (idx) => {
 
-  const resetGame = () => {
-    setBoard(Array(9).fill(null));
-    setTurn("X");
-  };
+  // if (winner) return;
+  if (board[idx]) return;
+
+  const newBoard = [...board];
+  newBoard[idx] = turn;
+  setBoard(newBoard);
+
+  if (mode === "two") {
+    setTurn(turn === "X" ? "O" : "X");
+    return;
+  }
+
+  if (mode === "single" && turn === "X") {
+    setTurn("O");
+
+    try {
+      const response = await fetch("http://localhost:5000/move", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          board: newBoard.map(c => c ?? " "),
+          history: moveHistory,     
+          player: "O",
+          depth:
+            difficulty === "easy" ? 2 :
+            difficulty === "medium" ? 4 :
+            difficulty === "hard" ? 6 : 8
+        })
+      });
+
+      const data = await response.json();
+
+      // if (data.winner) {
+      // setWinner(data.winner);
+      // return;
+      // }
+
+
+      if (data.move !== null && data.move !== undefined) {
+        const aiBoard = [...newBoard];
+        aiBoard[data.move] = "O";
+        setBoard(aiBoard);
+        setMoveHistory(data.history);
+      }
+
+      setTurn("X");
+
+    } catch (err) {
+      console.error("AI move failed", err);
+      setTurn("X");
+    }
+  }
+};
+
+const resetGame = () => {
+  setBoard(Array(9).fill(null))
+  setCurrentPlayer("X")
+  setWinner(null)
+  setMoveHistory([])
+}
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-black text-white flex flex-col">
@@ -49,6 +101,7 @@ export default function VanishingTicTacToe() {
                 </div>
               </motion.div>
             )}
+
 
             {mode === "single" && !difficulty && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>

@@ -1,7 +1,5 @@
-
 import math
-from board import movepl, vanishpl, undo_move
-from rules import winnercheck
+from rules import winnercheck, movepl, vanishpl, undo_move
 
 node_count=0
 
@@ -104,27 +102,39 @@ def minimax(board, history, depth, alpha, beta, maximizing):
         return best
 
 
-def best_move(board, depth, player):
-    global node_count
-    node_count=0
-    
-    best_score = -float("inf") if player == "X" else float("inf")
-    move = None
+def best_move(board,history,depth,player):
+    if player == "X": 
+        best_score = -math.inf
+        move = None
 
-    for i in range(9):
-        if board[i] == " ":
-            board[i] = player
-            score = minimax(board, depth - 1, player == "O")
-            board[i] = " "
+        for i in range(9):
+            if board[i] == " ":
+                movepl(board,history,i,"X")
+                removed = vanishpl(board,history,"X")
 
-            if player == "X":
+                score = minimax(board,history,depth-1,-math.inf,math.inf,False)
+
+                undo_move(board,history,i,removed)
+
                 if score > best_score:
                     best_score = score
                     move = i
-            else:
+
+    else: 
+        best_score = math.inf
+        move = None
+
+        for i in range(9):
+            if board[i] == " ":
+                movepl(board,history,i,"O")
+                removed = vanishpl(board,history,"O")
+
+                score = minimax(board,history,depth-1,-math.inf,math.inf,True)
+
+                undo_move(board,history,i,removed)
+
                 if score < best_score:
                     best_score = score
                     move = i
-
+                
     return move
-

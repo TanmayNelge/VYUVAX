@@ -1,6 +1,4 @@
 from board import printb
-from ai import best_move
-from board import movepl, vanishpl, undo_move
 
 winning_positions = [
     (0,1,2),(3,4,5),(6,7,8),
@@ -14,7 +12,39 @@ def winnercheck(board):
             return board[a]
     return None
 
+def movepl(board, history, position, player):
+    if board[position] != " ":
+        return False
+    board[position] = player
+    history.append((position, player))
+    return True
+
+
+def vanishpl(board, history, player):
+    player_moves = [m for m in history if m[1] == player]
+
+    removed = None
+    if len(player_moves) > 3:
+        removed = player_moves[0]
+        board[removed[0]] = " "
+        history.remove(removed)
+
+    return removed
+
+
+def undo_move(board, history, position, removed):
+    board[position] = " "
+    history.pop()
+
+    if removed:
+        pos, player = removed
+        board[pos] = player
+        history.insert(0, removed)
+
+
 def play():
+    from ai import best_move  
+
     board = [" "] * 9
     history = []
     depth = 6

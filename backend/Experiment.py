@@ -1,6 +1,5 @@
 from ai import best_move
-from board import movepl, vanishpl
-from rules import winnercheck
+from rules import winnercheck, movepl, vanishpl
 
 def play_tournament(games=10, depth_x=4, depth_o=6):
     results = {"X": 0, "O": 0, "Draw": 0}
