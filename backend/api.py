@@ -1,6 +1,7 @@
 import sys
 import json
 from ai import best_move
+from rules import winnercheck
 
 def main():
     data = json.loads(sys.stdin.read())
@@ -11,8 +12,9 @@ def main():
     player = data["player"]
 
     move = best_move(board, history, depth, player)
+    winner = winnercheck(board)
 
-    print(json.dumps({"move": move}))
+    print(json.dumps({"move": move, "winner" : winner}))
 
 if __name__ == "__main__":
     main()

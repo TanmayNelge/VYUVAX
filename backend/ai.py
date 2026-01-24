@@ -10,7 +10,6 @@ def mark_age(position, player, history):
             return len(player_moves) - idx - 1
     return None
 
-
 def age_weight(age):
     if age == 0:
         return 1.0
@@ -18,7 +17,6 @@ def age_weight(age):
         return 0.7
     else:
         return 0.3
-
 
 def evaluate_line_with_age(line_positions, board, history, player):
     opponent = "O" if player == "X" else "X"
