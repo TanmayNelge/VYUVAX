@@ -1,6 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const cors = require("cors"); // <-- import cors
+const cors = require("cors");
 const { spawn } = require("child_process");
 
 const app = express();
@@ -8,7 +8,7 @@ app.use(bodyParser.json());
 app.use(cors()); 
 
 app.post("/move", (req, res) => {
-  const python = spawn("python", ["backend/api.py"]);
+  const python = spawn("python", ["../backend/api.py"]);
 
   python.stdin.write(JSON.stringify(req.body));
   python.stdin.end();
@@ -23,6 +23,7 @@ app.post("/move", (req, res) => {
   });
 
   python.on("close", () => {
+    console.log("Python finished, result:", result);
     try {
       res.json(JSON.parse(result));
     } catch (e) {
