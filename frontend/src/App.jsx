@@ -239,107 +239,82 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
-const WIN_LINES = [
-  [0,1,2],[3,4,5],[6,7,8],
-  [0,3,6],[1,4,7],[2,5,8],
-  [0,4,8],[2,4,6],
-];
-
-function checkWinner(board) {
-  for (const [a,b,c] of WIN_LINES) {
-    if (board[a] !== " " && board[a] === board[b] && board[a] === board[c]) {
-      return board[a];
-    }
-  }
-  return null;
-}
-
-function applyVanishing(board, history, player) {
-  const playerMoves = history.filter(m => m.player === player);
-  if (playerMoves.length > 3) {
-    const removed = playerMoves[0];
-    board[removed.index] = " ";
-    history = history.filter(m => m !== removed);
-  }
-  return { board, history };
-}
-
 export default function VanishingTicTacToe() {
   const [mode, setMode] = useState(null);
   const [difficulty, setDifficulty] = useState(null);
   const [board, setBoard] = useState(Array(9).fill(" "));
+  const [history, setHistory] = useState([]);
   const [turn, setTurn] = useState("X");
   const [winner, setWinner] = useState(null);
-  const [history, setHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const depthMap = {
+    easy: 2,
+    medium: 4,
+    hard: 6,
+    extreme: 8,
+  };
 
   const handleCellClick = async (idx) => {
-    if (winner || board[idx] !== " ") return;
+    if (board[idx] !== " " || winner || isLoading) return;
 
-    let newBoard = [...board];
-    let newHistory = [...history, { player: turn, index: idx }];
-    newBoard[idx] = turn;
-
-    ({ board: newBoard, history: newHistory } =
-      applyVanishing(newBoard, newHistory, turn));
-
-    const win = checkWinner(newBoard);
-    setBoard(newBoard);
-    setHistory(newHistory);
-
-    if (win) {
-      setWinner(win);
-      return;
-    }
-
+    // ---- TWO PLAYER MODE (NO BACKEND AI) ----
     if (mode === "two") {
-      setTurn(turn === "X" ? "O" : "X");
+      try {
+        const res = await fetch("http://localhost:8000/move", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            board,
+            history,
+            player: turn,
+            move_index: idx,
+            mode: "two",
+          }),
+        });
+
+        const data = await res.json();
+        setBoard(data.board);
+        setHistory(data.history);
+        setWinner(data.winner);
+        setTurn(turn === "X" ? "O" : "X");
+      } catch (err) {
+        console.error(err);
+      }
       return;
     }
 
-    setTurn("O");
-
+    // ---- SINGLE PLAYER MODE (BACKEND CONTROLS AI) ----
     try {
-      const response = await fetch("http://localhost:5000/move", {
+      setIsLoading(true);
+      const moveDepth = depthMap[difficulty] || 4; 
+      console.log(`Requesting move with depth: ${moveDepth} (difficulty: ${difficulty})`);
+
+      const res = await fetch("http://localhost:8000/move", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          board: newBoard,
-          history: newHistory,
-          player: "O",
-          depth:
-            difficulty === "easy" ? 2 :
-            difficulty === "medium" ? 4 :
-            difficulty === "hard" ? 6 : 8,
+          board,
+          history,
+          player: "X",
+          move_index: idx,
+          depth: moveDepth,
+          mode: "single",
         }),
       });
 
-      const data = await response.json();
-      if (data.move === null || data.move === undefined) {
-        setTurn("X");
-        return;
+      const data = await res.json();
+      if (data.board) {
+        setBoard(data.board);
+        setHistory(data.history);
+        setWinner(data.winner);
+      } else {
+        console.error("Invalid data received:", data);
       }
-
-      let aiBoard = [...newBoard];
-      let aiHistory = [...newHistory, { player: "O", index: data.move }];
-      aiBoard[data.move] = "O";
-
-      ({ board: aiBoard, history: aiHistory } =
-        applyVanishing(aiBoard, aiHistory, "O"));
-
-      const aiWin = checkWinner(aiBoard);
-      setBoard(aiBoard);
-      setHistory(aiHistory);
-
-      if (aiWin) {
-        setWinner(aiWin);
-        return;
-      }
-
-      setTurn("X");
-
     } catch (err) {
       console.error("AI error:", err);
-      setTurn("X");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -361,7 +336,7 @@ export default function VanishingTicTacToe() {
           <CardContent className="p-8">
 
             {!mode && (
-              <motion.div initial={{opacity:0}} animate={{opacity:1}}>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <h2 className="text-center mb-6">Choose Mode</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <Button onClick={() => setMode("single")}>Single Player</Button>
@@ -371,10 +346,10 @@ export default function VanishingTicTacToe() {
             )}
 
             {mode === "single" && !difficulty && (
-              <motion.div initial={{opacity:0}} animate={{opacity:1}}>
-                <h2 className="text-center mb-6">Difficulty</h2>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <h2 className="text-center mb-6">Choose Difficulty</h2>
                 <div className="grid grid-cols-2 gap-4">
-                  {["easy","medium","hard","extreme"].map(lvl => (
+                  {["easy", "medium", "hard", "extreme"].map((lvl) => (
                     <Button key={lvl} onClick={() => setDifficulty(lvl)}>
                       {lvl.toUpperCase()}
                     </Button>
@@ -384,30 +359,47 @@ export default function VanishingTicTacToe() {
             )}
 
             {(mode === "two" || difficulty) && (
-              <motion.div initial={{opacity:0}} animate={{opacity:1}}>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <h2 className="text-center mb-4">
-                  {winner ? `${winner} Wins!` : `Turn: ${turn}`}
+                  {winner ? `${winner} wins!` : `Turn: ${turn}`}
                 </h2>
 
                 <div className="grid grid-cols-3 gap-3 w-64 mx-auto">
-                  {board.map((cell, i) => (
-                    <div
-                      key={i}
-                      onClick={() => handleCellClick(i)}
-                      className="h-20 w-20 flex items-center justify-center text-3xl font-bold bg-white/20 rounded-xl cursor-pointer hover:bg-white/30"
-                    >
-                      {cell !== " " ? cell : ""}
-                    </div>
-                  ))}
+                  {board.map((cell, idx) => {
+                    const playerMoves = history.filter((m) => m.player === turn);
+                    const opponentMoves = history.filter((m) => m.player !== turn);
+
+                    const isPlayerVanishing =
+                      playerMoves.length >= 3 && playerMoves[0].index === idx && !winner;
+                    const isOpponentVanishing =
+                      opponentMoves.length >= 3 && opponentMoves[0].index === idx && !winner;
+
+                    let bgClass = "bg-white/20";
+                    if (isPlayerVanishing) bgClass = "bg-red-500/50";
+                    else if (isOpponentVanishing) bgClass = "bg-green-500/50";
+
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => handleCellClick(idx)}
+                        className={`h-20 w-20 flex items-center justify-center text-3xl font-bold rounded-xl cursor-pointer hover:bg-white/30 transition-all ${bgClass}`}
+                      >
+                        {cell !== " " ? cell : ""}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="mt-6 flex justify-center gap-4">
                   <Button onClick={resetGame}>Reset</Button>
-                  <Button variant="ghost" onClick={() => {
-                    setMode(null);
-                    setDifficulty(null);
-                    resetGame();
-                  }}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setMode(null);
+                      setDifficulty(null);
+                      resetGame();
+                    }}
+                  >
                     Back
                   </Button>
                 </div>
@@ -420,3 +412,4 @@ export default function VanishingTicTacToe() {
     </div>
   );
 }
+

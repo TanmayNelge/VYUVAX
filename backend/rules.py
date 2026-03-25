@@ -94,7 +94,6 @@
 #                     continue
 #                 vanishpl(board, history, "O")
 #                 current_player = "X"
-
 #             else:
 #                 pos = best_move(board, history, depth, "X")
 #                 movepl(board, history, pos, "X")
@@ -108,20 +107,17 @@
 #             printb(board)
 #             print()
 #             print(f"{current_player}'s turn")
-
 #             pos = int(input("Enter position (0-8): "))
 #             if not movepl(board, history, pos, current_player):
 #                 print("Invalid move")
 #                 continue
 
 #             vanishpl(board, history, current_player)
-
 #             winner = winnercheck(board)
 #             if winner:
 #                 printb(board)
 #                 print(winner, "wins!")
 #                 break
-
 #             current_player = "O" if current_player == "X" else "X"
 
 winning_positions = [
@@ -153,21 +149,25 @@ def vanishpl(board, history, player):
     player_moves = [m for m in history if m["player"] == player]
 
     removed = None
+    removed_index = -1
+    
     if len(player_moves) > 3:
-        removed = player_moves[0]          
+        removed = player_moves[0]
         board[removed["index"]] = " "
+        removed_index = history.index(removed) # Find where it was in the main history
         history.remove(removed)
 
-    return removed
+    return removed, removed_index
 
 
-def undo_move(board, history, position, removed):
+def undo_move(board, history, position, removed_info):
     board[position] = " "
     history.pop()
 
+    removed, removed_index = removed_info
     if removed:
         board[removed["index"]] = removed["player"]
-        history.insert(0, removed)
+        history.insert(removed_index, removed)
 
 def play():
     from ai import best_move
