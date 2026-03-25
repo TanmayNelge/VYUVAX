@@ -1,4 +1,3 @@
-
 board = [" "] * 9
 history = []
 
@@ -9,4 +8,3 @@ def printb(board):
     print(board[3], "|", board[4], "|", board[5])
     print("--+---+--")
     print(board[6], "|", board[7], "|", board[8])
-
